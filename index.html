@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashi's Delicious Bites</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #f8b500, #e63946);
+        color: #333;
+      }
+      header {
+        position: relative;
+        text-align: center;
+        color: white;
+        background-color: #f94144;
+        padding: 20px;
+      }
+      #banner {
+        width: 100%;
+        height: 300px;
+        background-size: cover;
+        background-position: center;
+        border-bottom: 5px solid #f3722c;
+      }
+      #changeBannerBtn {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        padding: 10px 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      h1 {
+        margin: 0;
+        padding: 10px;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+      }
+      .container {
+        padding: 20px;
+        max-width: 800px;
+        margin: auto;
+      }
+      .recipe-card {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        margin: 15px 0;
+        padding: 15px;
+        position: relative;
+      }
+      .recipe-card img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+      }
+      .deleteRecipeBtn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #e63946;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .form {
+        margin: 20px 0;
+        padding: 20px;
+        background-color: #fefae0;
+        border-radius: 10px;
+      }
+      .form input,
+      .form button {
+        display: block;
+        margin: 10px 0;
+        width: 100%;
+        padding: 10px;
+        font-size: 1em;
+      }
+      .form button {
+        background-color: #f9c74f;
+        color: #333;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #loginSection {
+        text-align: center;
+        margin: 20px;
+        display: none;
+      }
+      #logoutBtn {
+        background-color: #f3722c;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div
+        id="banner"
+        style="background-image: url('default-banner.jpg')"
+      ></div>
+      <button id="changeBannerBtn">Change Banner</button>
+      <h1>Dashi's Delicious Bites</h1>
+    </header>
+
+    <div id="loginSection">
+      <h2>Admin Login</h2>
+      <input
+        type="password"
+        id="adminPassword"
+        placeholder="Enter Admin Password"
+      />
+      <button id="loginBtn">Login</button>
+    </div>
+
+    <div class="container" id="manageRecipesSection" style="display: none">
+      <h2>Manage Recipes</h2>
+      <div class="form">
+        <input
+          type="text"
+          id="recipeTitle"
+          placeholder="Recipe Title"
+          required
+        />
+        <textarea
+          id="recipeDescription"
+          placeholder="Recipe Description"
+          rows="3"
+          required
+        ></textarea>
+        <input type="file" id="recipeImage" accept="image/*" required />
+        <button id="addRecipeBtn">Add Recipe</button>
+      </div>
+
+      <h2>Recipe List</h2>
+      <div id="recipeList"></div>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <input type="file" id="bannerUpload" style="display: none" />
+
+    <script>
+      // Banner changing functionality
+      const banner = document.getElementById("banner");
+      const changeBannerBtn = document.getElementById("changeBannerBtn");
+      const bannerUpload = document.getElementById("bannerUpload");
+
+      changeBannerBtn.addEventListener("click", () => {
+        bannerUpload.click(); // Simulate click on the hidden file input
+      });
+
+      bannerUpload.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (event) {
+            const imageUrl = event.target.result;
+            banner.style.backgroundImage = `url('${imageUrl}')`;
+            localStorage.setItem("bannerImage", imageUrl); // Save in local storage
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Load saved banner from local storage
+      const savedBanner = localStorage.getItem("bannerImage");
+      if (savedBanner) {
+        banner.style.backgroundImage = `url('${savedBanner}')`;
+      }
+
+      // Recipe management functionality
+      const recipeList = document.getElementById("recipeList");
+      const addRecipeBtn = document.getElementById("addRecipeBtn");
+      const recipeTitleInput = document.getElementById("recipeTitle");
+      const recipeDescriptionInput =
+        document.getElementById("recipeDescription");
+      const recipeImageInput = document.getElementById("recipeImage");
+
+      const recipes = JSON.parse(localStorage.getItem("recipes")) || [];
+
+      function renderRecipes() {
+        recipeList.innerHTML = "";
+        recipes.forEach((recipe, index) => {
+          const recipeCard = document.createElement("div");
+          recipeCard.className = "recipe-card";
+          recipeCard.innerHTML = `
+        <img src="${recipe.image}" alt="${recipe.title}">
+        <h2>${recipe.title}</h2>
+        <p>${recipe.description}</p>
+        <button class="deleteRecipeBtn" data-index="${index}">Delete</button>
+      `;
+          recipeList.appendChild(recipeCard);
+        });
+      }
+
+      function saveRecipes() {
+        localStorage.setItem("recipes", JSON.stringify(recipes));
+      }
+
+      addRecipeBtn.addEventListener("click", () => {
+        const title = recipeTitleInput.value.trim();
+        const description = recipeDescriptionInput.value.trim();
+        const file = recipeImageInput.files[0];
+
+        if (title && description && file) {
+          const reader = new FileReader();
+          reader.onload = function (event) {
+            recipes.push({
+              title,
+              description,
+              image: event.target.result,
+            });
+            saveRecipes();
+            renderRecipes();
+            recipeTitleInput.value = "";
+            recipeDescriptionInput.value = "";
+            recipeImageInput.value = "";
+          };
+          reader.readAsDataURL(file);
+        } else {
+          alert("Please fill in all fields and select an image.");
+        }
+      });
+
+      recipeList.addEventListener("click", (e) => {
+        if (e.target.classList.contains("deleteRecipeBtn")) {
+          const index = e.target.getAttribute("data-index");
+          recipes.splice(index, 1);
+          saveRecipes();
+          renderRecipes();
+        }
+      });
+
+      // Admin Login and Logout
+      const manageRecipesSection = document.getElementById(
+        "manageRecipesSection"
+      );
+      const loginSection = document.getElementById("loginSection");
+      const loginBtn = document.getElementById("loginBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const adminPasswordInput = document.getElementById("adminPassword");
+
+      const adminPassword = "Dar@987654321"; // Change this to your desired password
+
+      if (localStorage.getItem("isAdmin") === "true") {
+        loginSection.style.display = "none";
+        manageRecipesSection.style.display = "block";
+      } else {
+        loginSection.style.display = "block";
+        manageRecipesSection.style.display = "none";
+      }
+
+      loginBtn.addEventListener("click", () => {
+        if (adminPasswordInput.value === adminPassword) {
+          localStorage.setItem("isAdmin", "true");
+          loginSection.style.display = "none";
+          manageRecipesSection.style.display = "block";
+        } else {
+          alert("Incorrect password. Try again.");
+        }
+      });
+
+      logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("isAdmin");
+        loginSection.style.display = "block";
+        manageRecipesSection.style.display = "none";
+      });
+
+      // Initial render
+      renderRecipes();
+    </script>
+  </body>
+</html>
